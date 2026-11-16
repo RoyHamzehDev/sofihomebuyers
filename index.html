@@ -564,12 +564,14 @@ footer{background:var(--deep2);color:var(--on-deep-muted);font-size:.9rem}
       var msg=f.querySelector(".msg"),btn=f.querySelector("button");
       function show(t){msg.textContent=t;msg.hidden=false}
       if(!live){show("Preview only. This form starts emailing you leads once the site is on your hosting.");return}
-      btn.disabled=true;
-      var fd=new FormData(f);
-      fetch("https://formsubmit.co/ajax/info@sofihomebuyers.com",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
+      btn.disabled=true;show("Sending…");
+      var fd=new FormData(f),ctl=window.AbortController?new AbortController():null;
+      if(ctl)setTimeout(function(){ctl.abort()},20000);
+      fetch("https://formsubmit.co/ajax/info@sofihomebuyers.com",{method:"POST",signal:ctl?ctl.signal:undefined,headers:{"Content-Type":"application/json","Accept":"application/json"},
         body:JSON.stringify({"_subject":"New cash offer request: "+fd.get("address"),"Property address":fd.get("address"),"Name":fd.get("name"),"Phone":fd.get("phone"),"Form used":fd.get("form"),"_honey":fd.get("_honey"),"_template":"table","_captcha":"false"})})
         .then(function(r){return r.ok?r.json():Promise.reject()})
-        .then(function(d){if(!d||String(d.success)!=="true")throw 0;f.reset();show("Thank you. We received your details and will call you shortly.")})
+        .then(function(d){if(d&&/activat/i.test(d.message||"")){show("Almost there: this form needs a one-time activation. Check the info@sofihomebuyers.com inbox for an email from FormSubmit.");return}
+          if(!d||String(d.success)!=="true")throw 0;f.reset();show("Thank you. We received your details and will call you shortly.")})
         .catch(function(){show("That did not send. Please try again, or call us at (407) 505-4818.")})
         .then(function(){btn.disabled=false});
     });
