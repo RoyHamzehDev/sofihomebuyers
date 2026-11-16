@@ -246,6 +246,10 @@ footer{background:var(--deep2);color:var(--on-deep-muted);font-size:.9rem}
       <form name="cash-offer" method="POST" action="https://formsubmit.co/info@sofihomebuyers.com" class="lead">
         <input type="hidden" name="form" value="Top of page">
         <input class="hp" type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <input type="hidden" name="_subject" value="New cash offer request">
+        <input type="hidden" name="_template" value="table">
+        <input type="hidden" name="_captcha" value="false">
+        <input type="hidden" name="_next" value="">
         <label for="h-address">Property address
           <input id="h-address" name="address" autocomplete="street-address" placeholder="Street, city, ZIP" required>
         </label>
@@ -481,6 +485,10 @@ footer{background:var(--deep2);color:var(--on-deep-muted);font-size:.9rem}
       <form name="cash-offer" method="POST" action="https://formsubmit.co/info@sofihomebuyers.com" class="lead">
         <input type="hidden" name="form" value="Bottom of page">
         <input class="hp" type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <input type="hidden" name="_subject" value="New cash offer request">
+        <input type="hidden" name="_template" value="table">
+        <input type="hidden" name="_captcha" value="false">
+        <input type="hidden" name="_next" value="">
         <label for="f-address">Property address
           <input id="f-address" name="address" autocomplete="street-address" placeholder="Street, city, ZIP" required>
         </label>
@@ -555,6 +563,7 @@ footer{background:var(--deep2);color:var(--on-deep-muted);font-size:.9rem}
   main.addEventListener("volumechange",label);
 
 
+  if(/[?&]sent=1/.test(location.search)){var m=document.querySelector("#offer .msg");m.textContent="Thank you. We received your details and will call you shortly.";m.hidden=false}
   // Lead forms: each submission is emailed to info@sofihomebuyers.com through the FormSubmit relay.
   // In the Claude preview or a file opened from disk there is no server, so the form shows a notice.
   var live=!/claude/i.test(location.hostname)&&location.protocol!=="file:";
@@ -572,7 +581,9 @@ footer{background:var(--deep2);color:var(--on-deep-muted);font-size:.9rem}
         .then(function(r){return r.ok?r.json():Promise.reject()})
         .then(function(d){if(d&&/activat/i.test(d.message||"")){show("Almost there: this form needs a one-time activation. Check the info@sofihomebuyers.com inbox for an email from FormSubmit.");return}
           if(!d||String(d.success)!=="true")throw 0;f.reset();show("Thank you. We received your details and will call you shortly.")})
-        .catch(function(){show("That did not send. Please try again, or call us at (407) 505-4818.")})
+        .catch(function(){
+          // Quick send failed (blocked, slow or refused): fall back to a normal form post, which FormSubmit always accepts.
+          show("Sending…");f.querySelector('[name="_next"]').value=location.href.split(/[?#]/)[0]+"?sent=1#offer";HTMLFormElement.prototype.submit.call(f)})
         .then(function(){btn.disabled=false});
     });
   });
