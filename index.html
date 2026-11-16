@@ -243,13 +243,13 @@ footer{background:var(--deep2);color:var(--on-deep-muted);font-size:.9rem}
    <div class="offer">
       <h3>Get your cash offer</h3>
       <p class="sub">Takes about a minute. No obligation to accept.</p>
-      <form name="cash-offer" method="POST" action="https://formsubmit.co/info@sofihomebuyers.com" class="lead">
+      <form name="cash-offer" method="POST" action="https://api.web3forms.com/submit" class="lead">
         <input type="hidden" name="form" value="Top of page">
-        <input class="hp" type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true">
-        <input type="hidden" name="_subject" value="New cash offer request">
-        <input type="hidden" name="_template" value="table">
-        <input type="hidden" name="_captcha" value="false">
-        <input type="hidden" name="_next" value="">
+        <input type="hidden" name="access_key" value="01964c5e-fc34-4042-ba20-52f09855d6e4">
+        <input type="hidden" name="subject" value="New cash offer request">
+        <input type="hidden" name="from_name" value="Sofi Home Buyers website">
+        <input type="hidden" name="redirect" value="">
+        <input class="hp" type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" aria-hidden="true">
         <label for="h-address">Property address
           <input id="h-address" name="address" autocomplete="street-address" placeholder="Street, city, ZIP" required>
         </label>
@@ -482,13 +482,13 @@ footer{background:var(--deep2);color:var(--on-deep-muted);font-size:.9rem}
     <div class="offer">
       <h3>Tell us about the house</h3>
       <p class="sub">We only use your details to contact you about this property.</p>
-      <form name="cash-offer" method="POST" action="https://formsubmit.co/info@sofihomebuyers.com" class="lead">
+      <form name="cash-offer" method="POST" action="https://api.web3forms.com/submit" class="lead">
         <input type="hidden" name="form" value="Bottom of page">
-        <input class="hp" type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true">
-        <input type="hidden" name="_subject" value="New cash offer request">
-        <input type="hidden" name="_template" value="table">
-        <input type="hidden" name="_captcha" value="false">
-        <input type="hidden" name="_next" value="">
+        <input type="hidden" name="access_key" value="01964c5e-fc34-4042-ba20-52f09855d6e4">
+        <input type="hidden" name="subject" value="New cash offer request">
+        <input type="hidden" name="from_name" value="Sofi Home Buyers website">
+        <input type="hidden" name="redirect" value="">
+        <input class="hp" type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" aria-hidden="true">
         <label for="f-address">Property address
           <input id="f-address" name="address" autocomplete="street-address" placeholder="Street, city, ZIP" required>
         </label>
@@ -564,7 +564,7 @@ footer{background:var(--deep2);color:var(--on-deep-muted);font-size:.9rem}
 
 
   if(/[?&]sent=1/.test(location.search)){var m=document.querySelector("#offer .msg");m.textContent="Thank you. We received your details and will call you shortly.";m.hidden=false}
-  // Lead forms: each submission is emailed to info@sofihomebuyers.com through the FormSubmit relay.
+  // Lead forms: each submission is emailed to info@sofihomebuyers.com through Web3Forms.
   // In the Claude preview or a file opened from disk there is no server, so the form shows a notice.
   var live=!/claude/i.test(location.hostname)&&location.protocol!=="file:";
   Array.prototype.forEach.call(document.querySelectorAll("form.lead"),function(f){
@@ -573,17 +573,18 @@ footer{background:var(--deep2);color:var(--on-deep-muted);font-size:.9rem}
       var msg=f.querySelector(".msg"),btn=f.querySelector("button");
       function show(t){msg.textContent=t;msg.hidden=false}
       if(!live){show("Preview only. This form starts emailing you leads once the site is on your hosting.");return}
+      if(f.querySelector('[name="botcheck"]').checked)return;
       btn.disabled=true;show("Sending…");
       var fd=new FormData(f),ctl=window.AbortController?new AbortController():null;
       if(ctl)setTimeout(function(){ctl.abort()},20000);
-      fetch("https://formsubmit.co/ajax/info@sofihomebuyers.com",{method:"POST",signal:ctl?ctl.signal:undefined,headers:{"Content-Type":"application/json","Accept":"application/json"},
-        body:JSON.stringify({"_subject":"New cash offer request: "+fd.get("address"),"Property address":fd.get("address"),"Name":fd.get("name"),"Phone":fd.get("phone"),"Form used":fd.get("form"),"_honey":fd.get("_honey"),"_template":"table","_captcha":"false"})})
-        .then(function(r){return r.ok?r.json():Promise.reject()})
-        .then(function(d){if(d&&/activat/i.test(d.message||"")){show("Almost there: this form needs a one-time activation. Check the info@sofihomebuyers.com inbox for an email from FormSubmit.");return}
-          if(!d||String(d.success)!=="true")throw 0;f.reset();show("Thank you. We received your details and will call you shortly.")})
+      fetch("https://api.web3forms.com/submit",{method:"POST",signal:ctl?ctl.signal:undefined,headers:{"Content-Type":"application/json","Accept":"application/json"},
+        body:JSON.stringify({access_key:fd.get("access_key"),subject:"New cash offer request: "+fd.get("address"),from_name:"Sofi Home Buyers website",
+          "Property address":fd.get("address"),"Name":fd.get("name"),"Phone":fd.get("phone"),"Form used":fd.get("form")})})
+        .then(function(r){return r.json()})
+        .then(function(d){if(!d||!d.success)throw 0;f.reset();show("Thank you. We received your details and will call you shortly.")})
         .catch(function(){
-          // Quick send failed (blocked, slow or refused): fall back to a normal form post, which FormSubmit always accepts.
-          show("Sending…");f.querySelector('[name="_next"]').value=location.href.split(/[?#]/)[0]+"?sent=1#offer";HTMLFormElement.prototype.submit.call(f)})
+          // Quick send failed: fall back to a normal form post, which returns to this page afterwards.
+          f.querySelector('[name="redirect"]').value=location.href.split(/[?#]/)[0]+"?sent=1#offer";HTMLFormElement.prototype.submit.call(f)})
         .then(function(){btn.disabled=false});
     });
   });
